@@ -1,3 +1,5 @@
+local M = {}
+
 ---Represents the ancestor of some node.
 ---@class Ancestor
 ---@field name TSNode
@@ -51,20 +53,35 @@ local function build_node_path(node)
 	return node_path
 end
 
-vim.api.nvim_create_autocmd(
-	{ "CursorHold", "CursorHoldI" },
-	{
-		callback = function()
-			local current_node = vim.treesitter.get_node()
-			if not current_node then
-				return
+function M.enable()
+	local group = vim.api.nvim_create_augroup("WhereAmI", { clear = false })
+
+	vim.api.nvim_create_autocmd(
+		{ "CursorHold", "CursorHoldI" },
+		{
+			group = group,
+			-- TODO: When other languages are supported, how do we keep this
+			-- pattern up to date?
+			pattern = "*.lua",
+			callback = function()
+				local current_node = vim.treesitter.get_node()
+				if not current_node then
+					return
+				end
+
+				local start = vim.uv.hrtime()
+				local winbar_text = build_node_path(current_node)
+				local duration = (vim.uv.hrtime() - start) / 1000
+
+				vim.opt_local.winbar = winbar_text .. string.format("(%d us)", duration)
 			end
+		}
+	)
+end
 
-			local start = vim.uv.hrtime()
-			local winbar_text = build_node_path(current_node)
-			local duration = (vim.uv.hrtime() - start) / 1000
+function M.disable()
+	-- TODO: Does this work if the auto group doesn't exist?
+	vim.api.nvim_del_augroup_by_name("WhereAmI")
+end
 
-			vim.opt_local.winbar = winbar_text .. string.format("(%d us)", duration)
-		end
-	}
-)
+return M
