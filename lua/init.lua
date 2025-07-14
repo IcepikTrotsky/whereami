@@ -1,3 +1,8 @@
+---Represents the ancestor of some node.
+---@class Ancestor
+---@field name TSNode
+---@field definition TSNode
+
 local query_string = [[
 		(function_declaration
 	  name: (_) @ancestor.name
@@ -6,14 +11,22 @@ local query_string = [[
 local query = vim.treesitter.query.parse("lua", query_string)
 
 ---@param node TSNode
----@return table<integer, TSNode[]>
+---@return Ancestor[]
 local function get_ancestors(node)
 	local ancestor = node:tree():root() ---@type TSNode?
-	local ancestors = {}
+	local ancestors = {} ---@type Ancestor[]
 
 	while ancestor do
 		for _, match in query:iter_matches(ancestor, 0, nil, nil, { max_start_depth = 0 }) do
-			table.insert(ancestors, match)
+			local anc = {}
+			for cap, nodes in pairs(match) do
+				if query.captures[cap] == "ancestor.name" then
+					anc.name = nodes[1]
+				elseif query.captures[cap] == "ancestor" then
+					anc.definition = nodes[1]
+				end
+			end
+			table.insert(ancestors, anc)
 		end
 		ancestor = ancestor:child_with_descendant(node)
 	end
@@ -25,16 +38,14 @@ end
 ---@param node TSNode
 local function build_node_path(node)
 	local node_path = ""
+	local ancestors = get_ancestors(node)
 
-	for _, ancestor in pairs(get_ancestors(node)) do
-		for cap, nodes in pairs(ancestor) do
-			-- TODO: How do we ensure that this function has access to
-			-- this query without it being a global variable?
-			if query.captures[cap] == "ancestor.name" then
-				-- TODO: We're assuming that there will only ever be one node here
-				node_path = node_path .. vim.treesitter.get_node_text(nodes[1], 0) .. " | "
-			end
-		end
+	if #ancestors == 0 then
+		return ""
+	end
+
+	for _, ancestor in pairs(ancestors) do
+		node_path = node_path .. vim.treesitter.get_node_text(ancestor.name, 0) .. " | "
 	end
 
 	return node_path
