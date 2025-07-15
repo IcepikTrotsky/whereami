@@ -88,4 +88,23 @@ function M.disable()
   vim.api.nvim_del_augroup_by_name "WhereAmI"
 end
 
+function M.setup()
+  vim.api.nvim_create_user_command(
+    "WhereAmI",
+    function(args)
+      if args.args == "enable" then
+        M.enable()
+      elseif args.args == "disable" then
+        M.disable()
+      else
+        vim.notify("Invalid argument: " .. args.args)
+      end
+    end,
+    {
+      nargs = 1,
+      complete = function() return { "enable", "disable" } end,
+    }
+  )
+end
+
 return M
