@@ -5,18 +5,19 @@ local M = {}
 ---@field name TSNode
 ---@field definition TSNode
 
-local query_string = [[
-		(function_declaration
-	  name: (_) @ancestor.name
-	) @ancestor
-	]]
-local query = vim.treesitter.query.parse("lua", query_string)
-
 ---@param node TSNode
 ---@return Ancestor[]
 local function get_ancestors(node)
   local ancestor = node:tree():root() ---@type TSNode?
   local ancestors = {} ---@type Ancestor[]
+
+  -- TODO: Where is the best place to manage queries?
+  -- TODO: What if the filetype doesn't match the parser language for some reason?
+  local query = vim.treesitter.query.get(vim.o.filetype, "whereami")
+  if not query then
+    return ancestors
+  end
+
 
   while ancestor do
     for _, match in query:iter_matches(ancestor, 0, nil, nil, { max_start_depth = 0 }) do
