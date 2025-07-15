@@ -51,6 +51,12 @@ local function build_node_path(node)
     node_path = node_path .. vim.treesitter.get_node_text(ancestor.name, 0) .. " | "
   end
 
+  local parent = ancestors[#ancestors].definition
+  local start_row, _, end_row = parent:range()
+  local cursor = vim.api.nvim_win_get_cursor(0)
+
+  node_path = node_path .. string.format("(line %d/%d)", cursor[1] - start_row, end_row - start_row + 1)
+
   return node_path
 end
 
