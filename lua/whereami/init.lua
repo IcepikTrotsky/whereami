@@ -67,7 +67,7 @@ function M.enable()
     group = group,
     -- TODO: When other languages are supported, how do we keep this
     -- pattern up to date?
-    pattern = "*.lua",
+    pattern = { "*.lua", "*.php" },
     callback = function()
       local current_node = vim.treesitter.get_node()
       if not current_node then
