@@ -8,12 +8,19 @@ local M = {}
 ---@param node TSNode
 ---@return Ancestor[]
 local function get_ancestors(node)
-  local ancestor = node:tree():root() ---@type TSNode?
+  local parser = vim.treesitter.get_parser(0)
+  if not parser then
+    return {}
+  end
+
+  -- TODO: Will the first tree always be the one that we want?
+  -- What does it actually mean if there are multiple?
+  local tree = parser:parse()[1]
+  local ancestor = tree:root() ---@type TSNode?
   local ancestors = {} ---@type Ancestor[]
 
   -- TODO: Where is the best place to manage queries?
-  -- TODO: What if the filetype doesn't match the parser language for some reason?
-  local query = vim.treesitter.query.get(vim.o.filetype, "whereami")
+  local query = vim.treesitter.query.get(parser:lang(), "whereami")
   if not query then
     return ancestors
   end
